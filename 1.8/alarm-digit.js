@@ -2,9 +2,9 @@ const express = require('express');
 var ws = require('nodejs-websocket');
 var aws = require('aws-sdk');
 aws.config.region = 'us-west-2';
-var ses = new aws.SES({"accessKeyId": "AKIAIORLELU2YA2NBUIA", "secretAccessKey": "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", "region": "us-west-2"});
+var ses = new aws.SES({"accessKeyId": "AKIAIQZ7BZSHGASPK2SQ", "secretAccessKey": "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", "region": "us-west-2"});
 
-var sns = new aws.SNS({"accessKeyId": "AKIAIORLELU2YA2NBUIA", "secretAccessKey": "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", "region": "us-west-2"});
+var sns = new aws.SNS({"accessKeyId": "AKIAIQZ7BZSHGASPK2SQ", "secretAccessKey": "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", "region": "us-west-2"});
 
 
 
@@ -25,7 +25,6 @@ var motivo;
 function call(phoneNotificar)
 {
     console.log("Init Call...");
-    broadcast({type:'info',message:'Iniciando Llamada'});
     var myCall = {
       url: 'http://llamada.ngrok.io/tierradelfuego',
       to: phoneNotificar,
@@ -105,6 +104,7 @@ app.post('/gathertdf', (request, response) => {
   if (request.body.Digits) {
     switch (request.body.Digits) {
       case '1': 
+        broadcast({response: "tratamiento"});
         twiml.say({voice: "alice", language: "es-ES"}, 'Muchas gracias, su caso ya se encuentra en tratamiento.');
         twiml.hangup();
             break;
@@ -144,7 +144,7 @@ var wsServer = ws.createServer(function (conn) {
                   if(r.notificar){
                     console.log('calling:'+calling);
                     if(calling)
-                        broadcast({type:'info', message:'Demostración en proceso'});
+                        console.log('Demostración en proceso');
                     else
                     {
                         calling = true;
@@ -155,7 +155,7 @@ var wsServer = ws.createServer(function (conn) {
                     }
                   }
                   else
-                    broadcast({type:'error', message:'Debe setear el campo notificar.'});
+                    console.log('Debe setear el campo notificar.');
                   break;
                 case 'sms':
                   if(r.numero){
@@ -171,7 +171,7 @@ var wsServer = ws.createServer(function (conn) {
                     });
                   }
                   else
-                    broadcast({type:'error', message:'Debe setear el campo número'});
+                    console.log('Debe setear el campo número');
                   break;
                 case 'email':
                   var eparam = {
