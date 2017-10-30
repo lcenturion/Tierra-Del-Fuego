@@ -1,0 +1,942 @@
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <!-- VERSION 1.7 -->
+        <title>Ministerio de Salud de Tierra del Fuego</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+        <script type="text/javascript" src="js/centrosdesalud.js"></script>
+        <script src="http://d3js.org/d3.v3.min.js" language="JavaScript"></script>
+        <script src="js/liquidFillGauge.js" language="JavaScript"></script>
+        <script src="js/jquery.tempgauge.js"></script>
+        <script src="js/justgage.js"></script>
+        <script src="js/raphael-2.1.4.min.js"></script>
+		<script src="js/wnumb.js"></script>
+		<script src="js/nouislider.js"></script>
+        <link href="css/nouislider.css" rel="stylesheet" />
+
+        <style>
+          .liquidFillGaugeText 
+          { 
+              font-family: Helvetica;
+              font-weight: bold;
+          }
+          #map 
+          {
+              width: 100%;
+              height:100%;
+              background-color: grey;
+          }
+          h3{
+            font-size:11pt; margin:0;
+          }
+          h4{
+            font-size:9pt; margin:2px;
+          }
+          #info-content{font-size:9pt;}
+          
+        .input-css {
+          display: inline-block;
+          -webkit-box-sizing: content-box;
+          -moz-box-sizing: content-box;
+          box-sizing: content-box;
+          width: 130px;
+          height: 4px;
+          padding: 10px 5px;
+          margin: 4px;
+          border: 1px solid #b7b7b7;
+          -webkit-border-radius: 3px;
+          border-radius: 3px;
+          font: normal 14px/normal Verdana, Geneva, sans-serif;
+          color: rgba(0,0,0,1);
+          -o-text-overflow: clip;
+          text-overflow: clip;
+          background: rgba(252,252,252,1);
+          -webkit-box-shadow: 2px 2px 2px 0 rgba(0,0,0,0.2) inset;
+          box-shadow: 2px 2px 2px 0 rgba(0,0,0,0.2) inset;
+          text-shadow: 1px 1px 0 rgba(255,255,255,0.66) ;
+          -webkit-transition: all 200ms cubic-bezier(0.42, 0, 0.58, 1);
+          -moz-transition: all 200ms cubic-bezier(0.42, 0, 0.58, 1);
+          -o-transition: all 200ms cubic-bezier(0.42, 0, 0.58, 1);
+          transition: all 200ms cubic-bezier(0.42, 0, 0.58, 1);
+        }          
+          
+        .btn{
+          background: #c0c0c0;
+          -webkit-border-radius: 0;
+          -moz-border-radius: 0;
+          border-radius: 4px;
+          font-family: Arial;
+          color: #ffffff;
+          font-size: 10pt;
+          padding: 4px;
+          margin:4px;
+          text-decoration: none;
+          width:100px;
+        }
+
+        .btn:hover{
+          background: #3cb0fd;
+          text-decoration: none;
+        }
+        
+        
+        </style>     
+        <script>
+            var map;
+            var centros_marks = [];
+            var infoCentros;
+            var gauge;
+
+			var dashboard = {
+			
+				"render" : function (i){
+				
+				
+					return('<div id="idcentro" style="display:inline;">' +
+						'<div>' +
+							'<h3>Centro de Salud</h3>' +
+							'<h4 id="idcentername">' + centros[i].name + '<h4>' +
+						'</div>' +
+						'<div id="iddashboard">' +
+							'<div id="idgauges">' +
+								'<table style="font-size:9pt;">' +
+									'<tr>' +
+										  '<td><svg id="idwater" width="70" height="70"></svg></td>' +
+										  '<td><div id="idtempamb"></div></td>' +
+										  '<td><div id="idtempcaldera"></div></td>' +
+										  '<td><div id="idlux" style="width:100px; height:80px"></div></td>' +
+										  '<td><div id="idalarms" style="width:100px; height:80px"></div></td>' +
+									'</tr>' +
+									'<tr>' +
+										  '<td colspan="3"/>' +
+										  '<td style="padding: 3px 7px;margin-left:4px; font-size:10pt;">' +
+											'Notificar' +
+										  '</td>' +
+										  '<td style="padding: 3px 7px;margin-left:4px; font-size:10pt;">' +
+											'Escalar' +
+										  '</td>' +
+									'</tr>' +
+									'<tr>' +
+										  '<td colspan="3"/>' +
+										  '<td>' +
+											'<input id="idnotification" class="input-css" placeholder="Phone" />' +
+										  '</td>' +
+										  '<td>' +
+											'<input id="idscalenotification" class="input-css" placeholder="Phone" />' +
+										  '</td>' +
+									'</tr>' +
+								'</table>' +
+							'</div>' +
+							'<hr />' +
+						'</div>' +
+						'<div id="idsettings" style="display:inline;">' +
+							'<table style="font-size:9pt;" cellpadding="10" style="width:300px;">' +
+								'<tr>' +
+									'<td>Agua(%)</td>' +
+									'<td style="padding:4px;">' +
+										'<div id="idrangewater" style="width:200px;font-size:9pt;font-family:verdana;"></div>' +
+									'</td>' +
+									'<td id="idrangewatervalues"/>' +
+								'</tr>' +
+								'<tr>' +
+									'<td>Ambiente(°C)</td>' +
+									'<td style="padding:4px;">' +
+										'<div id="idrangeambiente" style="width:200px;font-size:9pt;font-family:verdana;"></div>' +
+									'</td>' +
+									'<td id="idrangeambientevalues"/>' +
+								'</tr>' +
+								'<tr>' +
+									'<td>Caldera(°C)</td>' +
+									'<td style="padding:4px;">' +
+										'<div id="idrangecaldera" style="width:200px;font-size:9pt;font-family:verdana;"></div>' +
+									'</td>' +
+									'<td id="idrangecalderavalues"/>' +
+								'</tr>' +
+								'<tr>' +
+									'<td style="padding:4px;">Luminosidad(%)</td>' +
+									'<td>' +
+										'<div id="idrangelux" style="width:200px;font-size:9pt;font-family:verdana;"></div>' +
+									'</td>' +
+									'<td id="idrangeluxvalues"/>' +
+								'</tr>' +
+							'</table>' +
+						'</div>' +
+				   '</div>');
+				},
+			
+				"create" : function(){
+				
+					dashboard.tempambiente.create();
+					dashboard.tempcaldera.create();
+					dashboard.water.create();
+					dashboard.lux.create();
+					dashboard.alarms.create();
+				
+				},
+				
+				tempambiente: {
+				
+					id: 'idtempamb',
+					value: -3,
+					color: '#c0c0c0',
+					"setValue": function(value){
+						console.log('set value ambiente');
+						dashboard.tempambiente.value = value;
+						if(infoCentros.getMap())
+						{
+							console.log('set ambiente with info open');
+							if(dashboard.tempambiente.value < dashboard.tempambiente.range.start[0] || dashboard.tempambiente.value > dashboard.tempambiente.range.start[1])
+							{
+								dashboard.tempambiente.color = '#f00000';
+								document.getElementById('idtempamb').innerHTML = "<div class='idtempamb'>" + dashboard.tempambiente.value + "&degC" + "</div>";
+
+								$(".idtempamb").tempGauge({
+									width:35, 
+									borderWidth:2,
+									borderColor: "#c0c0c0",
+									showLabel:true, 
+									fillColor:dashboard.tempambiente.color,
+									defaultTemp: dashboard.tempambiente.value,
+									minTemp: -20,
+									maxTemp: 45,
+									labelSize:11,
+									labelColor:"#707070"
+									});
+							}
+							else
+							{
+								dashboard.tempambiente.color = '#c0c0c0';
+								document.getElementById('idtempamb').innerHTML = "<div class='idtempamb'>" + dashboard.tempambiente.value + "&degC" + "</div>";
+								
+								$(".idtempamb").tempGauge({
+									width:35, 
+									borderWidth:2,
+									borderColor: "#c0c0c0",
+									showLabel:true, 
+									fillColor:dashboard.tempambiente.color,
+									defaultTemp: dashboard.tempambiente.value,
+									minTemp: -20,
+									maxTemp: 45,
+									labelSize:11,
+									labelColor:"#707070"
+									});
+							}
+						
+						
+						
+						}
+					},
+					"create" : function(){
+								document.getElementById('idtempamb').innerHTML = "<div class='idtempamb'>" + dashboard.tempambiente.value + "&degC" + "</div>";
+								$(".idtempamb").tempGauge({
+									width:35, 
+									borderWidth:2,
+									borderColor: "#c0c0c0",
+									showLabel:true, 
+									fillColor:dashboard.tempambiente.color,
+									defaultTemp: dashboard.tempambiente.value,
+									minTemp: -20,
+									maxTemp: 45,
+									labelSize:11,
+									labelColor:"#707070"
+									});
+
+								var rangeAmbiente = noUiSlider.create(document.getElementById('idrangeambiente'), {
+									start: dashboard.tempambiente.range.start,
+									tooltips: false,
+									range: {
+										'min': [  dashboard.tempambiente.range.min ],
+										'max': [ dashboard.tempambiente.range.max]
+									},
+									step:1,
+									format: wNumb({
+										decimals: 0
+									})
+								});				
+								rangeAmbiente.on('update', function( values, handle ){
+									//console.log('update range ambiente' +  values[0] + '-' + values[1]);
+								
+									dashboard.tempambiente.range.start[0] = values [0];
+									dashboard.tempambiente.range.start[1] = values [1];
+									document.getElementById('idrangeambientevalues').innerText = values[0] + '°  ' + values[1] +'°';
+									
+									if(dashboard.tempambiente.value < values[0] || dashboard.tempambiente.value > values[1])
+									{
+										//console.log('ambiente rojo');
+										dashboard.tempambiente.color = '#f00000';
+										document.getElementById('idtempamb').innerHTML = "<div class='idtempamb'>" + dashboard.tempambiente.value + "&degC" + "</div>";
+
+										$(".idtempamb").tempGauge({
+											width:35, 
+											borderWidth:2,
+											borderColor: "#c0c0c0",
+											showLabel:true, 
+											fillColor:dashboard.tempambiente.color,
+											defaultTemp: dashboard.tempambiente.value,
+											minTemp: -20,
+											maxTemp: 45,
+											labelSize:11,
+											labelColor:"#707070"
+											});
+									}
+									else
+									{
+										//console.log('ambiente gris');
+										dashboard.tempambiente.color = '#c0c0c0';
+										document.getElementById('idtempamb').innerHTML = "<div class='idtempamb'>" + dashboard.tempambiente.value + "&degC" + "</div>";
+
+										$(".idtempamb").tempGauge({
+											width:35, 
+											borderWidth:2,
+											borderColor: "#c0c0c0",
+											showLabel:true, 
+											fillColor:dashboard.tempambiente.color,
+											defaultTemp: dashboard.tempambiente.value,
+											minTemp: -20,
+											maxTemp: 45,
+											labelSize:11,
+											labelColor:"#707070"
+											});
+									}
+								});
+							},
+					range : {
+						start: [ -20, 45],
+						min: -20,
+						max: 45
+					}
+				}
+				,
+				tempcaldera: {
+				
+					id: 'idtempcaldera',
+					value: 70,
+					color: '#c0c0c0',
+					"setValue": function(value){
+						dashboard.tempcaldera.value = value;
+						if(infoCentros.getMap())
+						{
+							if(dashboard.tempcaldera.value < dashboard.tempcaldera.range.start[0] || dashboard.tempcaldera.value > dashboard.tempcaldera.range.start[1])
+							{
+								dashboard.tempcaldera.color = '#f00000';
+								document.getElementById('idtempcaldera').innerHTML = "<div class='idtempcaldera'>" + dashboard.tempcaldera.value + "&degC" + "</div>";
+								
+								$(".idtempcaldera").tempGauge({
+									width:35, 
+									borderWidth:2,
+									borderColor: "#c0c0c0",
+									showLabel:true, 
+									fillColor:dashboard.tempcaldera.color,
+									defaultTemp: dashboard.tempcaldera.value,
+									minTemp: -20,
+									maxTemp: 120,
+									labelSize:11,
+									labelColor:"#707070"
+									});
+							}
+							else
+							{
+								dashboard.tempcaldera.color = '#c0c0c0';
+								document.getElementById('idtempcaldera').innerHTML = "<div class='idtempcaldera'>" + dashboard.tempcaldera.value + "&degC" + "</div>";
+								
+								$(".idtempcaldera").tempGauge({
+									width:35, 
+									borderWidth:2,
+									borderColor: "#c0c0c0",
+									showLabel:true, 
+									fillColor:dashboard.tempcaldera.color,
+									defaultTemp: dashboard.tempcaldera.value,
+									minTemp: -20,
+									maxTemp: 120,
+									labelSize:11,
+									labelColor:"#707070"
+									});
+							}
+						
+						
+						
+						}
+					},
+					"create" : function(){
+								document.getElementById('idtempcaldera').innerHTML = "<div class='idtempcaldera'>" + dashboard.tempcaldera.value + "&degC" + "</div>";
+								$(".idtempcaldera").tempGauge({
+									width:35, 
+									borderWidth:2,
+									borderColor: "#c0c0c0",
+									showLabel:true, 
+									fillColor:dashboard.tempcaldera.color,
+									defaultTemp: dashboard.tempcaldera.value,
+									minTemp: -20,
+									maxTemp: 120,
+									labelSize:11,
+									labelColor:"#707070"
+									});
+
+									var rangeCaldera = noUiSlider.create(document.getElementById('idrangecaldera'), {
+										start: dashboard.tempcaldera.range.start,
+										tooltips: false,
+										range: {
+											'min': [  dashboard.tempcaldera.range.min ],
+											'max': [ dashboard.tempcaldera.range.max]
+										},
+										step:1,
+										format: wNumb({
+											decimals: 0
+										})
+									});				
+									rangeCaldera.on('update', function( values, handle ){
+									
+										dashboard.tempcaldera.range.start[0] = values [0];
+										dashboard.tempcaldera.range.start[1] = values [1];
+										document.getElementById('idrangecalderavalues').innerText = values[0] + '°  ' + values[1] +'°';
+										
+										if(dashboard.tempcaldera.value < values[0] || dashboard.tempcaldera.value > values[1])
+										{
+											dashboard.tempcaldera.color = '#f00000',
+											document.getElementById('idtempcaldera').innerHTML = "<div class='idtempcaldera'>" + dashboard.tempcaldera.value + "&degC" + "</div>";
+											$(".idtempcaldera").tempGauge({
+												width:35, 
+												borderWidth:2,
+												borderColor: "#c0c0c0",
+												showLabel:true, 
+												fillColor:dashboard.tempcaldera.color,
+												defaultTemp: dashboard.tempcaldera.value,
+												minTemp: -20,
+												maxTemp: 120,
+												labelSize:11,
+												labelColor:"#707070"
+												});
+										}
+										else
+										{
+											dashboard.tempcaldera.color = '#c0c0c0',
+											document.getElementById('idtempcaldera').innerHTML = "<div class='idtempcaldera'>" + dashboard.tempcaldera.value + "&degC" + "</div>";
+											$(".idtempcaldera").tempGauge({
+												width:35, 
+												borderWidth:2,
+												borderColor: "#c0c0c0",
+												showLabel:true, 
+												fillColor:dashboard.tempcaldera.color,
+												defaultTemp: dashboard.tempcaldera.value,
+												minTemp: -20,
+												maxTemp: 120,
+												labelSize:11,
+												labelColor:"#707070"
+												});
+										}
+									});
+									
+									
+							},
+					range : {
+						start: [ -20, 120],
+						min: -20,
+						max: 120
+					}
+				
+				},
+				
+				water:{
+				
+					id:'idwater',
+					value: 50,
+					object: null,
+					"create" : function(){
+						var configWater = liquidFillGaugeDefaultSettings();
+						configWater.circleColor = "#c0c0c0"; //"#1E90FF";
+						configWater.textColor = "#000000"; //"#FF4444";
+						configWater.waveTextColor = "#000000";//"#4682B4";
+						configWater.waveColor = "#c0c0c0"; //"#ADD8E6";
+						configWater.circleThickness = 0.2;
+						configWater.textVertPosition = 0.2;
+						configWater.waveHeight = 0.15;  
+						configWater.waveAnimateTime = 1000;
+						configWater.waveAnimate = true;
+						dashboard.water.object = loadLiquidFillGauge("idwater", dashboard.water.value, configWater);
+						
+
+						var water = noUiSlider.create(document.getElementById('idrangewater'), {
+							start: dashboard.water.range.start,
+							tooltips: false,
+							range: {
+								'min': [  dashboard.water.range.min ],
+								'max': [ dashboard.water.range.max]
+							},
+							step:1,
+							format: wNumb({
+								decimals: 0
+							})
+						});				
+						water.on('update', function( values, handle ){
+						
+							//console.log('water range update');
+							dashboard.water.range.start[0] = values [0];
+							dashboard.water.range.start[1] = values [1];
+							document.getElementById('idrangewatervalues').innerText = values[0] + '%  ' + values[1] +'%';
+							
+							if(dashboard.water.value < values[0] || dashboard.water.value > values[1])
+							{
+								document.getElementById("idwater").childNodes[0].childNodes[3].childNodes[0].style.fill = "#f00000"
+							}
+							else
+							{
+								document.getElementById("idwater").childNodes[0].childNodes[3].childNodes[0].style.fill = "#c0c0c0"
+							}
+							dashboard.water.object.update(dashboard.water.value);
+						});						
+					
+						
+					},
+					"setValue" : function(value){
+					
+						dashboard.water.value = value;
+						if(infoCentros.getMap())
+						{
+							if(value < dashboard.water.range.start[0] || value > dashboard.water.range.start[1])
+							{
+								document.getElementById("idwater").childNodes[0].childNodes[3].childNodes[0].style.fill = "#f00000"
+							}
+							else
+							{
+								document.getElementById("idwater").childNodes[0].childNodes[3].childNodes[0].style.fill = "#c0c0c0"
+							}
+							dashboard.water.object.update(value);
+						}
+					
+					
+					
+					},
+					range : {
+						start: [0, 100],
+						min: 0,
+						max: 100
+					}				
+				
+				},
+				
+				lux:{
+				
+					value:50,
+					object: null,
+					"create" : function(){
+					
+						dashboard.lux.object = new JustGage({
+						  id: "idlux",
+						  value: dashboard.lux.range.start,
+						  min: 0,
+						  max: 100,
+						  title: "Luminosidad",
+						  label: "Lux",
+							levelColors: [
+							  "#c0c0c0"
+							]
+						});
+						var rangeLux = noUiSlider.create(document.getElementById('idrangelux'), {
+							start: dashboard.lux.range.start,
+							tooltips: false,
+							range: {
+								'min': [  0 ],
+								'max': [ 100 ]
+							},
+							step:1,
+							format: wNumb({
+								decimals: 0
+							})
+						});
+
+						rangeLux.on('update', function( values, handle ){
+						
+							dashboard.lux.range.start[0] = values [0];
+							dashboard.lux.range.start[1] = values [1];
+
+							document.getElementById('idrangeluxvalues').innerText = values[0] + '% - ' + values[1] + ' %';
+							if(dashboard.lux.value < values[0] || dashboard.lux.value > values[1])
+							{
+								//console.log('lux rojo');
+								dashboard.lux.object.config.levelColors = ['#f00000'];
+							}
+							else
+							{
+								//console.log('lux gris');
+								dashboard.lux.object.config.levelColors = ['#c0c0c0'];
+							}
+							dashboard.lux.object.refresh(dashboard.lux.value);
+						});
+					},
+					"setValue":function (value){
+					
+						dashboard.lux.value = value;
+						if(infoCentros.getMap())
+						{
+							if(value < dashboard.lux.range.start[0] || value > dashboard.lux.range.start[1])
+							{
+								dashboard.lux.object.config.levelColors = ['#f00000'];
+							}
+							else
+							{
+								dashboard.lux.object.config.levelColors = ['#c0c0c0'];
+							}
+							dashboard.lux.object.refresh(dashboard.lux.value);
+						}
+					
+					},
+				
+					range : {
+						start: [0, 100],
+						min: 0,
+						max: 100
+					}								
+				
+				},
+				
+				alarms:{
+					id:'idalarms',
+					value:0,
+					object: null,
+					"create" : function(){
+						dashboard.alarms.object = new JustGage({ 
+						id: "idalarms",
+						value: dashboard.alarms.value,
+						min: 0,
+						max: 2,
+						title: "",
+						label: "Alarmas",
+						levelColors: [
+						  "#c0c0c0","#c0c000","#f00000"
+						]
+						});	
+
+					},
+					"setValue": function(value){
+						dashboard.alarms.value = value;
+						if(infoCentros.getMap())
+							dashboard.alarms.object.refresh(value);
+					}
+				}
+			
+			}
+			
+			
+			
+			
+            function initMap()
+            {
+				var styleArray = [
+					{
+						featureType: "all",
+						stylers: [
+							{ saturation: -80 }
+						]
+					},
+					{
+						featureType: "road.arterial",
+						elementType: "geometry",
+						stylers: [
+							{ hue: "#00ffee" },
+							{ saturation: 50 }
+						]
+					},
+					{
+						featureType: "poi.business",
+						elementType: "labels",
+						stylers: [
+							{ visibility: "off" }
+						]
+					}
+				];
+				var styledMap = new google.maps.StyledMapType(styleArray,{name: "Styled Map"});
+				map = new google.maps.Map(document.getElementById('map'), {
+				  center: {lat: -54.813750, lng:-68.323580},
+				  zoom: 13,
+				  mapTypeIds: [google.maps.MapTypeId.ROADMAP, 'map_style']
+				});
+				map.mapTypes.set('map_style', styledMap);
+				map.setMapTypeId('map_style');
+
+				infoCentros = new google.maps.InfoWindow();
+
+				for(i=0; i<centros.length; i++)
+				{
+					var img;
+					switch (centros[i].state){
+					  case estado.NORMAL:
+						img = 'images/CruzNormal.png';
+						break;
+					case estado.PELIGRO:
+					  img = 'images/CruzPeligro.png';
+					  break;
+					case estado.CRITICO:
+					  img = 'images/CruzCritico.png';
+					  break;
+					case estado.DISABLED:
+					  img = 'images/CruzDisabled.png';
+					  break;
+					}
+					centros_marks[i] = new google.maps.Marker({
+					  position: {lat: centros[i].lat, lng: centros[i].lng},
+					  map: map,
+					  animation: google.maps.Animation.DROP,
+					  icon: img,
+					  optimized: false,
+					  zIndex: 1
+					});
+					
+					centros_marks[i].addListener('click', (function(i) 
+					{
+						return function()
+						{
+							if(i != 0)
+							{
+								
+								return;
+							}
+							dashboard.visibility = true;
+							latlng = new google.maps.LatLng(centros_marks[i].lat,centros_marks[i].lng);
+							infoCentros.setContent(dashboard.render(i));
+							infoCentros.open(map, centros_marks[i]);
+							dashboard.create();
+						}
+						}
+					)(i));
+				}
+
+				setInterval(checkIfAllIsOk,1000);
+				//LUCAS
+				initWebSocket();
+				console.log('map init');
+            }
+			var notificationState = 0;
+			var notificationDate;
+			var luxError, waterError, ambienteError, calderaError;
+			
+			function checkIfAllIsOk()
+			{
+           
+                //console.log((new Date()).getSeconds());
+                var alert = false;
+                luxError = dashboard.lux.value < dashboard.lux.range.start[0] || dashboard.lux.value > dashboard.lux.range.start[1];
+                waterError = dashboard.water.value < dashboard.water.range.start[0] || dashboard.water.value > dashboard.water.range.start[1];
+                ambienteError = dashboard.tempambiente.value < dashboard.tempambiente.range.start[0] || dashboard.tempambiente.value > dashboard.tempambiente.range.start[1];
+                calderaError = dashboard.tempcaldera.value < dashboard.tempcaldera.range.start[0] || dashboard.tempcaldera.value > dashboard.tempcaldera.range.start[1];
+
+                //console.log('lux:' + luxError);
+                //console.log('water:' + waterError);
+				
+				//console.log('value:' + dashboard.water.value);
+				//console.log('range min:' + dashboard.water.range.min);
+				//console.log('range max:' + dashboard.water.range.max);
+				
+                //console.log('ambient:' + ambienteError);
+                //console.log('caldera:' + calderaError);
+                if( luxError || waterError || ambienteError || calderaError)
+                {
+					//console.log('alert!')
+                    alert = true;
+                }
+                else
+                {
+                    alert = false;
+                }
+                    
+                switch(notificationState)
+                {
+                    case 0:
+                        if(alert)
+                        {
+                            notificationDate = (new Date()).getTime();
+                            notificationState = 1;
+                        }
+                        break;
+                    case 1:
+                        if(alert)
+                        {   if(((new Date).getTime() - notificationDate) > 6000)
+                            {
+                                var motivo;
+                                if (luxError)
+                                  motivo = " de nivel de luminosidad.";
+                                else if (ambienteError)
+                                  motivo = " de temperatura ambiente."
+                                else if (calderaError)
+                                    motivo = " de temperatura de caldera."
+                                else if (waterError)
+                                    motivo = " de nivel de agua.";
+                                dashboard.alarms.setValue(1);
+                                notificationDate = (new Date()).getTime();
+                                notificationState = 2;
+                                centros_marks[0].setIcon("images/CruzPeligro.png");
+                                sendNotification(motivo);
+                            }
+                        }
+                        else
+                        {
+                            notificationState = 0;
+							dashboard.alarms.setValue(0);
+                            centros_marks[0].setIcon("images/CruzNormal.png");
+
+                        }
+                        break;
+                    case 2:
+                        if(alert)
+                        {   if(((new Date()).getTime() - notificationDate) > 7000)
+                            {
+                                var motivo;
+                                if (luxError)
+                                  motivo = "luz";
+                                else if (ambienteError)
+                                  motivo = "ambiente"
+                                else if (calderaError)
+                                    motivo = "caldera"
+                                else if (waterError)
+                                    motivo="agua";
+                                dashboard.alarms.setValue(2);
+                                notificationState = 3;
+                                centros_marks[0].setIcon("images/CruzCritico.png");
+                                sendEscaleNotification(motivo);
+                            }
+                        }
+                        else
+                        {
+							dashboard.alarms.setValue(0);
+                            notificationState = 0;
+                            centros_marks[0].setIcon("images/CruzNormal.png");
+
+                        }
+                    case 3:
+                        if(!alert)
+                        {
+							dashboard.alarms.setValue(0);
+                            notificationState = 0;
+                            centros_marks[0].setIcon("images/CruzNormal.png");
+                        }
+                        break;
+                }
+           }
+           function sendEscaleNotification(motivo)
+           {
+				//LUCAS
+                //make call
+				
+				try{
+					websocketAlarm.send(JSON.stringify({cmd:"call", ruta:"tierradelfuego", motivo: motivo, password:"Cocos", notificar: document.getElementById('idnotification').value, 									responsable: document.getElementById('idscalenotification').value}));
+				}
+				catch(err)
+				{
+				}
+           }
+           function sendNotification(motivo)
+           {
+				//LUCAS
+                //send sms
+				
+				try{
+					websocketAlarm.send(JSON.stringify({cmd:"sms", motivo: motivo, password:"Cocos", 
+                                                    	numero: document.getElementById('idnotification').value}));
+				}catch(err)
+				{
+				}
+           }
+           ///////////////////////////////////////////////// LUCAS //////////////////////////////////////////////////
+          var wsUriMQTT = "ws://tierra-del-fuego.ngrok.io";
+          var wsUriAlarm = "ws://alarms.ngrok.io";
+
+          var websocketAlarm, websocketMQTT;
+          function initWebSocket()
+          {
+              websocketAlarm = new WebSocket(wsUriAlarm);
+              websocketAlarm.onopen = function(evt) { onOpenAlarm(evt) };
+              websocketAlarm.onclose = function(evt) { onCloseAlarm(evt) };
+              websocketAlarm.onmessage = function(evt) { onMessageAlarm(evt) };
+              websocketAlarm.onerror = function(evt) { onErrorAlarm(evt) };
+
+              websocketMQTT = new WebSocket(wsUriMQTT);
+              websocketMQTT.onopen = function(evt) { onOpenMQTT(evt) };
+              websocketMQTT.onclose = function(evt) { onCloseMQTT(evt) };
+              websocketMQTT.onmessage = function(evt) { onMessageMQTT(evt) };
+              websocketMQTT.onerror = function(evt) { onErrorMQTT(evt) };
+          }
+
+          function onOpenAlarm(evt)
+          {
+              console.log("CONNECTED");
+          }
+
+          function onCloseAlarm(evt)
+          {
+              console.log("DISCONNECTED");
+          }
+          function onErrorAlarm(evt)
+          {
+              console.log('WEBSOCKETALARM ERROR:' + evt.data);
+          }
+
+          function onMessageAlarm(evt)
+          {
+
+          }
+
+          function onOpenMQTT(evt)
+          {
+              console.log("CONNECTED");
+          }
+
+          function onCloseMQTT(evt)
+          {
+              console.log("DISCONNECTED");
+          }
+          function onErrorMQTT(evt)
+          {
+              console.log('WEBSOCKETMQTT ERROR:' + evt.data);
+          }
+
+          function onMessageMQTT(evt)
+          {
+				//LUCAS
+		  
+            var msg = JSON.parse(evt.data.toString());
+            var data = msg.data;
+            switch (msg.topic)
+            {
+                case "AmbientTemperature":
+					ambientTemperature_value = data.AmbientTemperature*1;
+					dashboard.tempambiente.setValue(Math.round(ambientTemperature_value, 0));
+					break;
+                case "BoilerTemperature":
+					boilerTemperature_value = data.BoilerTemperature*1;
+					dashboard.tempcaldera.setValue(Math.round(boilerTemperature_value, 0));
+					break;
+                case "WaterLevel":
+					waterLevel_value = data.WaterLevel*1;
+					dashboard.water.setValue(Math.round(waterLevel_value, 0));
+					break;
+                case "LightLevel":
+					lightLevel_value = data.LightLevel*1;
+					if (lightLevel_value > 100)
+						lightLevel_value = 100;
+					dashboard.lux.setValue(Math.round(lightLevel_value, 0));
+					break;
+            }
+
+          }
+
+           
+           //////////////////////////////////////////////////////////////////////////////////////////////////////////
+            
+        </script>        
+    </head>
+    <body>
+    	<!--
+		<button onclick="dashboard.tempambiente.setValue(10);">Temp Amb 10</button>
+		<button onclick="dashboard.tempambiente.setValue(25);">Temp Amb 25</button>
+		<button onclick="dashboard.tempcaldera.setValue(100);">Temp Caldera 100</button>
+		<button onclick="dashboard.water.setValue(20);">Water 20%</button>
+		<button onclick="dashboard.lux.setValue(30);">Luz 30%</button>
+		-->
+	
+	
+        <div id="map"></div>
+        
+        <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDpPJj-rU7YuTTfF9i_xY6lH6H3vopSx7o&libraries=visualization&callback=initMap">
+        </script>
+    </body>
+</html>

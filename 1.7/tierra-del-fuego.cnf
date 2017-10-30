@@ -1,0 +1,19 @@
+authtoken: 4o2co4hVFBmgVj9MN7XqS_4SCVEEb7iE7zHuVnTEQYm
+tunnels:
+  mqtt:
+    addr: 1890
+    proto: tcp
+    subdomain: mqtt
+    remote_addr: 1.tcp.ngrok.io:22194
+  datos:
+    addr: 8006
+    proto: http
+    subdomain: tierra-del-fuego
+  alarmas:
+    addr: 8084
+    proto: http
+    subdomain: alarms
+  llamada:
+    addr: 8080
+    proto: http
+    subdomain: llamada
