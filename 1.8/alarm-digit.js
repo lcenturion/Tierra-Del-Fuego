@@ -2,9 +2,9 @@ const express = require('express');
 var ws = require('nodejs-websocket');
 var aws = require('aws-sdk');
 aws.config.region = 'us-west-2';
-var ses = new aws.SES({"accessKeyId": "AKIAIQZ7BZSHGASPK2SQ", "secretAccessKey": "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", "region": "us-west-2"});
+var ses = new aws.SES({"accessKeyId": "AKIAJT72A4OF2YW37ILQ", "secretAccessKey": "wByo08LJCQ994z5dPjoPdLoIrP86F", "region": "us-west-2"});
 
-var sns = new aws.SNS({"accessKeyId": "AKIAIQZ7BZSHGASPK2SQ", "secretAccessKey": "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", "region": "us-west-2"});
+var sns = new aws.SNS({"accessKeyId": "AKIAJT72A4OF2YW37ILQ", "secretAccessKey": "wByo08LJCQ994z5dPjoPdLoIrP86F", "region": "us-west-2"});
 
 
 
